@@ -7,7 +7,8 @@ public class AgentController : MonoBehaviour
     {
         agent.AddReward(1f);
         arena.RemoveSpecificFood(foodObject, 1);
-        if (arena.remainingFood <= 0)
+
+        if (arena.RemainingFood <= 0)
         {
             agent.EndEpisode();
         }
@@ -17,9 +18,6 @@ public class AgentController : MonoBehaviour
     {
         agent.AddReward(-0.5f);
         arena.RemoveSpecificFood(foodObject, -1);
-        if (arena.remainingFood <= 0)
-        {
-            agent.EndEpisode();
-        }
     }
+
 }

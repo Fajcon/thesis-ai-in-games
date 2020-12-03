@@ -1,52 +1,52 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using UnityEngine;
 
 public class SimpleAgent : Agent
 {
-    public float speed = 5f;
+    public float speed ;
     public float rotationSpeed = 180f;
     public bool useFoodMap = true;
-    public int numberOfAgents = 7;
     public AgentKnowledge agentKnowledge;
     public int capacity;
-    private int harvestedFood = 0;
+    public bool rewardsForAllAgents = true;
     
-    private Vector3 StartingPosition;
-    private Rigidbody Rb;
+    private int _harvestedFood;
+    private Rigidbody _rb;
 
     public Arena arena;
-    
-    public override void Initialize()
-    {
-        Rb = GetComponent<Rigidbody>();
-    }
-    
+
     public override void OnActionReceived(float[] vectorAction)
     {
-        // Convert the first action to forward movement
-        var forwardAmount = vectorAction[0];
 
-        // Convert the second action to turning left or right
+        if (transform.position.y < -10)
+        {
+            transform.position = new Vector3(transform.position.x, 4, transform.position.z);
+        }
+
+        var forwardAmount = vectorAction[0] > 0 ? 1 : 0;
         var turnAmount = 0f;
-        if (vectorAction[1] == 1)
+        
+        switch (vectorAction[1])
         {
-            turnAmount = -1f;
-        }
-        else if (vectorAction[1] == 2)
-        {
-            turnAmount = 1f;
+            case 1:
+                turnAmount = -1f;
+                break;
+            case 2:
+                turnAmount = 1f;
+                break;
         }
 
-        // Apply movement
-        Rb.MovePosition(transform.position + transform.forward * forwardAmount * speed * Time.fixedDeltaTime);
-        transform.Rotate(transform.up * turnAmount * rotationSpeed * Time.fixedDeltaTime);
+        _rb.MovePosition(transform.position + transform.forward * (forwardAmount * speed * Time.fixedDeltaTime));
+        transform.Rotate(transform.up * (turnAmount * rotationSpeed * Time.fixedDeltaTime));
 
-        // Apply a tiny negative reward every step to encourage action
-        if (MaxStep > 0) AddReward(-1f / MaxStep);
+        if (MaxStep > 0)
+        {
+            AddReward(-1f / MaxStep);
+        }
     }
-    
+
     public override void Heuristic(float[] actionsOut)
     {
         actionsOut[0] = Input.GetKey(KeyCode.W) ? 1.0f : 0.0f;
@@ -56,69 +56,82 @@ public class SimpleAgent : Agent
     public override void OnEpisodeBegin() 
     {
         arena.ResetArea();
-        harvestedFood = 0;
+        agentKnowledge.observedFoods = new HashSet<GameObject>();
+        _harvestedFood = 0;
     }
-    
+
     public override void CollectObservations(VectorSensor sensor)
     {
         if (useFoodMap)
-        { 
-            sensor.AddObservation(agentKnowledge.getObservedFoodsPositions());
+        {
+            foreach (var vector in agentKnowledge.getObservedFoodsPositions())
+            {
+                sensor.AddObservation(vector);
+            }
         }
-        sensor.AddObservation(capacity > harvestedFood);
+        sensor.AddObservation(capacity > _harvestedFood);
+     
     }
-    
+
     private void OnCollisionEnter(Collision collision)
     {
-        if (capacity <= harvestedFood) return;
-
-        harvestedFood++;
+        if (capacity <= _harvestedFood) return;
+        
         if (collision.transform.CompareTag("food"))
         {
+            _harvestedFood++;
             EatFood(collision.gameObject);
         }
-
         if (collision.transform.CompareTag("badFood"))
         {
+            _harvestedFood++;
             EatBadFood(collision.gameObject);
         }
     }
 
     private void EatFood(GameObject foodObject)
     {
-        var agents = arena.agents;;
-        foreach (var agent in agents)
+        if (rewardsForAllAgents)
         {
-            agent.GetComponent<SimpleAgent>().PositiveEvent();
+            var agents = arena.simpleAgents;
+            foreach (var agent in agents)
+            {
+                agent.AddReward(1f);
+            }
         }
-        arena.RemoveSpecificFood(foodObject, 1);
-        if (arena.remainingFood <= 0)
+        else
         {
-            EndEpisode();
+            this.AddReward(1f*arena.agents.Length);
+        }
+        
+        arena.RemoveSpecificFood(foodObject, 1);
+        
+        if (arena.RemainingFood <= 0)
+        {
+            foreach (var agent in arena.simpleAgents)
+            {
+                agent.EndEpisode();
+            }
         }
     }
+
     private void EatBadFood(GameObject foodObject)
     {
-        var agents = arena.agents;
-        foreach (var agent in agents)
+        if (rewardsForAllAgents)
         {
-            agent.GetComponent<SimpleAgent>().NegativeEvent();
+            var agents = arena.simpleAgents;
+            foreach (var agent in agents)
+            {
+                agent.AddReward(-0.5f);
+            }
         }
+        else
+        {
+            this.AddReward(-0.5f*arena.agents.Length);
+        }
+        
+
         arena.RemoveSpecificFood(foodObject, -1);
-        if (arena.remainingFood <= 0)
-        {
-            EndEpisode();
-        }
-    }
-
-    private void PositiveEvent()
-    {
-        AddReward(1/numberOfAgents); 
-    }
-
-    private void NegativeEvent()
-    {
-        AddReward(-1/numberOfAgents*2); 
     }
 
     private void FixedUpdate()
@@ -133,25 +146,40 @@ public class SimpleAgent : Agent
         }
 
         updateObservations();
+        
         arena.cumulativeRewardText.text = GetCumulativeReward().ToString("0.00");
 
     }
-    
+
     private void updateObservations()
     {
-        Vector3 direction = transform.forward;
-        direction.y -= 90;
+        var angle = -90;
+
+        Vector3 noAngle = this.transform.forward;
+        Quaternion spreadAngle = Quaternion.AngleAxis(angle, new Vector3(0, 1, 0));
+        Vector3 direction = spreadAngle * noAngle;
         for (var i = 0; i < 21; i++)
         {
-            direction.y += 180 / 21;
-            if (Physics.Raycast(transform.position, direction, out var hit, 20f))
+            angle += 180 / 21;
+            spreadAngle = Quaternion.AngleAxis(angle, new Vector3(0, 1, 0));
+            direction = spreadAngle * noAngle;
+            
+            if (Physics.Raycast(this.transform.position, direction, out var hit, 20))
             {
-                if (hit.collider.gameObject.CompareTag("food"))
+
+                if (hit.collider.gameObject.CompareTag("food") && agentKnowledge.observedFoods.Count < 5)
                 {
                     agentKnowledge.observedFoods.Add(hit.collider.gameObject);
                 }
             }
-        }
+            Debug.DrawRay(transform.position, direction, Color.green);
 
+        }
+    }
+
+    public override void Initialize()
+    {
+        _rb = GetComponent<Rigidbody>();
+        agentKnowledge.m_Recorder = Academy.Instance.StatsRecorder;
     }
 }

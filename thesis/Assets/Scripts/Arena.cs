@@ -1,104 +1,97 @@
+using System;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using Random = UnityEngine.Random;
+
 public class Arena : MonoBehaviour
 {
-
+    public TextMeshPro cumulativeRewardText;
     public GameObject food;
     public GameObject badFood;
-    private List<GameObject> foodList;
-    private List<GameObject> badFoodList;
     public GameObject[] agents;
-    public int remainingFood;
+    public SimpleAgent[] simpleAgents;
+    [NonSerialized] public int RemainingFood;
     public int numberOfFood = 20;
     public int numberOfBadFood = 5;
-    public TextMeshPro cumulativeRewardText;
 
-    private int range = 70;
-
-
+    private List<GameObject> _foodList;
+    private List<GameObject> _badFoodList;
+    private const int Range = 60;
+    
+    /**
+     * type == -1 for bad food and type == 1 for normal
+     */
     public void RemoveSpecificFood(GameObject foodObject, int type)
     {
         switch (type)
         {
             case -1:
-                badFoodList.Remove(foodObject);
+                _badFoodList.Remove(foodObject);
                 break;
             case 1:
-                foodList.Remove(foodObject);
-                remainingFood--;
+                _foodList.Remove(foodObject);
+                RemainingFood--;
                 break;
         }
-
         Destroy(foodObject);
-    }
-    
-    private void Start()
-    {
-        ResetArea();
-    }
-
-    public void ResetArea()
-    {
-        RemoveAllFood();
-        SpawnFood(numberOfFood, food, foodList);
-        SpawnFood(numberOfBadFood, badFood, badFoodList);
-        PlaceAgents();
     }
 
     private void PlaceAgents()
     {
-        foreach (GameObject agent in agents)
+        foreach (var agent in agents)
         {
-            agent.transform.position = new Vector3(Random.Range(-range, range)-43.61f, 4f,
-                                           Random.Range(-range, range)-42.9f) + transform.position;
-            agent.transform.rotation = Quaternion.Euler(new Vector3(0f, Random.Range(0, 360)));
-            
+            var rigidbody = agent.GetComponent<Rigidbody>();
+            rigidbody.velocity = Vector3.zero;
+            rigidbody.angularVelocity = Vector3.zero;
+            var position = new Vector3(Random.Range(-Range, Range), 4,
+                                           Random.Range(-Range, Range)) + transform.position;
+            var rotation = Quaternion.Euler(new Vector3(0f, Random.Range(0, 360)));
+            agent.transform.SetPositionAndRotation(position, rotation);
+
         }
     }
 
     private void RemoveAllFood()
     {
-        if (foodList != null)
+        if (_foodList != null)
         {
-            for (int i = 0; i < foodList.Count; i++)
+            foreach (var t in _foodList)
             {
-                if (foodList[i] != null)
-                {
-                    Destroy(foodList[i]);
-                }
+                Destroy(t);
             }
         }
-        foodList = new List<GameObject>();
+        _foodList = new List<GameObject>();
         
-        if (badFoodList != null)
+        if (_badFoodList != null)
         {
-            for (int i = 0; i < badFoodList.Count; i++)
+            foreach (var t in _badFoodList)
             {
-                if (badFoodList[i] != null)
-                {
-                    Destroy(badFoodList[i]);
-                }
+                Destroy(t);
             }
         }
-        badFoodList = new List<GameObject>();
+        _badFoodList = new List<GameObject>();
     }
 
-    private void SpawnFood(int count, GameObject type, List<GameObject> list)
+    private void SpawnFood(int count, GameObject type, ICollection<GameObject> list)
     {
-        for (int i = 0; i < count; i++)
+        for (var i = 0; i < count; i++)
         {
-            GameObject foodObject = Instantiate(type, new Vector3(Random.Range(-range, range)-43.61f, 1f, 
-                    Random.Range(-range, range)-42.9f) + transform.position,
+            var foodObject = Instantiate(type, new Vector3(Random.Range(-Range, Range), 1f, 
+                    Random.Range(-Range, Range)) + transform.position,
                 Quaternion.Euler(new Vector3(0f, Random.Range(0f, 360f), 90f)));
             
-            // Set the fish's parent to this area's transform
             foodObject.transform.SetParent(transform);
-
-            // Keep track of the fish
             list.Add(foodObject);
         }
+        RemainingFood = _foodList.Count;
+    }
 
-        remainingFood = foodList.Count;
+    public void ResetArea()
+    {
+        RemoveAllFood();
+        SpawnFood(numberOfFood, food, _foodList);
+        SpawnFood(numberOfBadFood, badFood, _badFoodList);
+        PlaceAgents();
     }
 }

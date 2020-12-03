@@ -1,0 +1,16 @@
+behaviors:
+  Thesis:
+    trainer_type: ppo
+    hyperparameters:
+      epsilon: 0.2
+      buffer_size: 2048
+      beta: 0.0005
+      batch_size: 1024
+      learning_rate: 3e-4
+      num_epoch: 3
+    network_settings:
+      hidden_units: 256
+      num_layers: 3
+    max_steps: 5000000
+    time_horizon: 128
+    summary_freq: 10000

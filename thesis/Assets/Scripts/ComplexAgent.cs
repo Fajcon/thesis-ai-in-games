@@ -20,6 +20,7 @@ public class ComplexAgent : Agent
     
     public override void Initialize()
     {
+        agentKnowledge.m_Recorder = Academy.Instance.StatsRecorder;
     }
     
     public override void OnActionReceived(float[] vectorAction)
@@ -56,12 +57,14 @@ public class ComplexAgent : Agent
                 agent.transform.Rotate(agent.transform.up * turnAmount * rotationSpeed * Time.fixedDeltaTime);
             }
 
-
-            // Apply a tiny negative reward every step to encourage action
-            if (MaxStep > 0) AddReward(-1f / MaxStep);
-            
+            // Apply a tiny negative reward every step to encourage action, for each player
             iterator = iterator + 2;
         }
+        if (MaxStep > 0)
+        {
+            AddReward(-1f / MaxStep);
+        }
+        
         
     }
     
@@ -84,26 +87,21 @@ public class ComplexAgent : Agent
     {
         if (useVectorObs)
         {
-            sensor.AddObservation(agentKnowledge.getObservedFoodsPositions());
+            foreach (var vector in agentKnowledge.getObservedFoodsPositions())
+            {
+                sensor.AddObservation(vector);
+            }
             foreach (var agent in agents)
             {
                 sensor.AddObservation(agent.capacity > agent.harvestedFood);
             }
         }
-    }
-    
-    private void OnCollisionEnter(Collision collision)
-    {
-        if (collision.transform.CompareTag("food"))
+        foreach (var agent in agents)
         {
-            AgentController.EatFood(this, collision.gameObject, arena);
-        }
-        if (collision.transform.CompareTag("badFood"))
-        {
-            AgentController.EatBadFood(this, collision.gameObject, arena);
+            sensor.AddObservation(agent.capacity > agent.harvestedFood);
         }
     }
-    
+
     private void FixedUpdate()
     {
         // Request a decision every 5 steps. RequestDecision() automatically calls RequestAction(),

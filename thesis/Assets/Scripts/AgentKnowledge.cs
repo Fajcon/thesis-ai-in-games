@@ -1,21 +1,24 @@
 using System.Collections.Generic;
 using System.Linq;
+using Unity.MLAgents;
 using UnityEngine;
 
 public class AgentKnowledge : MonoBehaviour
 {
     public HashSet<GameObject> observedFoods = new HashSet<GameObject>();
-
-    public IEnumerable<float> getObservedFoodsPositions()
+    public int sizeOfMemory = 10;
+    
+    public StatsRecorder m_Recorder;
+    
+    public IEnumerable<Vector2> getObservedFoodsPositions()
     {
         GameObject toRemove = null;
-        List<float> foodPositions = new List<float> {};
+        List<Vector2> foodPositions = new List<Vector2> {};
         foreach (var observedFood in observedFoods)
         {
             if (observedFood != null)
             {
-                foodPositions.Add(observedFood.transform.position.x);
-                foodPositions.Add(observedFood.transform.position.z);
+                foodPositions.Add(new Vector2(observedFood.transform.localPosition.x, observedFood.transform.localPosition.z));
             }
             else
             {
@@ -25,12 +28,10 @@ public class AgentKnowledge : MonoBehaviour
 
         observedFoods.Remove(toRemove);
 
-        for (int i = observedFoods.Count+1; i <= 20; i++)
-        {
-            foodPositions.Add(new float());
-            foodPositions.Add(new float());
+        while(foodPositions.Count < sizeOfMemory/2){
+            foodPositions.Add(Vector2.zero); 
         }
-
         return foodPositions;
     }
+    
 }

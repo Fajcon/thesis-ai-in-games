@@ -4,32 +4,35 @@ public class SingleCube: MonoBehaviour
 {
     public ComplexAgent agent;
     public int capacity;
-    public int harvestedFood = 0;
+    public int harvestedFood;
+    private const int NumberOfRays = 21;
+    private const int MaxDistanceOfRay = 21;
     private void OnCollisionEnter(Collision collision)
     {
         if (capacity <= harvestedFood) return;
 
-        harvestedFood++;
         if (collision.transform.CompareTag("food"))
         {
+            harvestedFood++;
             AgentController.EatFood(agent, collision.gameObject, agent.arena);
             agent.agentKnowledge.observedFoods.Remove(collision.gameObject);
         }
         if (collision.transform.CompareTag("badFood"))
         {
+            harvestedFood++;
             AgentController.EatBadFood(agent, collision.gameObject, agent.arena);
             agent.agentKnowledge.observedFoods.Remove(collision.gameObject);
         }
     }
 
-    private void updateObservations()
+    private void UpdateObservations()
     {
         Vector3 direction = transform.forward;
         direction.y -= 90;
-        for (var i = 0; i < 21; i++)
+        for (var i = 0; i < NumberOfRays; i++)
         {
-            direction.y += 180 / 21;
-            if (Physics.Raycast(agent.transform.position, direction, out var hit, 20f))
+            direction.y += 180f / NumberOfRays;
+            if (Physics.Raycast(agent.transform.position, direction, out var hit, MaxDistanceOfRay))
             {
                 if (hit.collider.gameObject.CompareTag("food"))
                 {
@@ -39,9 +42,9 @@ public class SingleCube: MonoBehaviour
         }
 
     }
-
+    
     private void Update()
     {
-        updateObservations();
+        UpdateObservations();
     }
 }
