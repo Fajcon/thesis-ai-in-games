@@ -144,11 +144,7 @@ public class SimpleAgent : Agent
         {
             RequestAction();
         }
-
         updateObservations();
-        
-        arena.cumulativeRewardText.text = GetCumulativeReward().ToString("0.00");
-
     }
 
     private void updateObservations()

@@ -116,7 +116,7 @@ public class ComplexAgent : Agent
             RequestAction();
         }
 
-        arena.cumulativeRewardText.text = GetCumulativeReward().ToString("0.00");
+        // arena.cumulativeRewardText.text = GetCumulativeReward().ToString("0.00");
 
     }
 }

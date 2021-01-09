@@ -1,0 +1,36 @@
+{
+    "Thesis": {
+        "checkpoints": [
+            {
+                "steps": 499981,
+                "file_path": "results/area_modified/1.0/Thesis/Thesis-499981.onnx",
+                "reward": null,
+                "creation_time": 1607767143.1473918
+            },
+            {
+                "steps": 999925,
+                "file_path": "results/area_modified/1.0/Thesis/Thesis-999925.onnx",
+                "reward": 20.000002287328243,
+                "creation_time": 1607768148.2177675
+            },
+            {
+                "steps": 1313007,
+                "file_path": "results/area_modified/1.0/Thesis/Thesis-1313007.onnx",
+                "reward": 23.000002779066563,
+                "creation_time": 1607768862.4626727
+            }
+        ],
+        "final_checkpoint": {
+            "steps": 1313007,
+            "file_path": "results/area_modified/1.0/Thesis.onnx",
+            "reward": 23.000002779066563,
+            "creation_time": 1607768862.4626727
+        }
+    },
+    "metadata": {
+        "stats_format_version": "0.2.0",
+        "mlagents_version": "0.22.0",
+        "torch_version": "1.7.0",
+        "tensorflow_version": "2.3.1"
+    }
+}
